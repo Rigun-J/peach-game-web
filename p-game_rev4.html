@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>복숭아 게임</title>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #fff0f5; 
+            --board-bg: #fffbf0; 
+            --primary-color: #ffab91; 
+            --accent-color: #ff7043; 
+            --text-color: #5d4037; 
+            --cell-size: 42px;
+        }
+        * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; user-select: none; }
+        body {
+            margin: 0; background-color: var(--bg-color);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; font-family: 'Nunito', 'Jua', sans-serif;
+            overflow: hidden;
+            cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'><defs><filter id='shadow'><feDropShadow dx='1' dy='1' stdDeviation='1' flood-color='rgba(0,0,0,0.3)'/></filter></defs><g filter='url(%23shadow)'><g transform='scale(0.8)'><path d='M2,2 L2,24 L7.5,19 L12,28 L15,26 L10.5,17 L17,17 Z' fill='white' stroke='%235D4037' stroke-width='1.0' stroke-linejoin='round' stroke-linecap='round'/></g><g transform='translate(8, 18) scale(0.8)'><path d='M10,16 Q20,2 30,16' fill='none' stroke='%238D6E63' stroke-width='3' stroke-linecap='round'/><path d='M6,16 L34,16 L31,32 Q20,36 9,32 Z' fill='%23FFCC80' stroke='white' stroke-width='2'/><path d='M6,16 L34,16 L31,32 Q20,36 9,32 Z' fill='%23FFCC80' stroke='%23EF6C00' stroke-width='1.5'/><path d='M6,16 L34,16' stroke='%23EF6C00' stroke-width='1.5'/></g></g></svg>") 0 0, auto;
+        }
+        #main-container {
+            position: relative; width: 100%; max-width: 800px; height: 100vh;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+        }
+        #start-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background-color: rgba(255, 240, 245, 0.98); z-index: 200;
+        }
+        .start-title { font-size: 3rem; color: var(--accent-color); margin-bottom: 10px; text-shadow: 2px 2px 0 #fff; }
+        .start-desc { font-size: 1.2rem; color: var(--text-color); margin-bottom: 30px; }
+        .btn-custom {
+            padding: 15px 50px; font-size: 1.5rem; font-family: 'Jua', sans-serif;
+            color: white; background: var(--accent-color);
+            border: none; border-radius: 50px; cursor: pointer;
+            box-shadow: 0 6px 15px rgba(255, 112, 67, 0.3);
+            transition: transform 0.2s;
+        }
+        .btn-custom:hover { transform: scale(1.05); }
+        #game-screen { display: none; flex-direction: column; align-items: center; width: 100%; }
+        #combo-area {
+            height: 50px; width: 100%; display: flex; justify-content: center; align-items: flex-end;
+            margin-bottom: 5px; pointer-events: none; z-index: 100;
+        }
+        #combo-text {
+            font-size: 2.5rem; color: #ffca28; font-weight: 900;
+            text-shadow: 3px 3px 0 #fff, 0 0 15px rgba(255, 160, 0, 0.6);
+            font-family: 'Jua', sans-serif; opacity: 0; transform: scale(0.5);
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .combo-pop { animation: popCombo 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes popCombo {
+            0% { opacity: 0; transform: scale(0.5) translateY(20px); }
+            50% { opacity: 1; transform: scale(1.2) translateY(0); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .header-info { display: flex; gap: 15px; margin-bottom: 30px; z-index: 50; }
+        .info-box {
+            background: white; padding: 8px 20px; border-radius: 25px;
+            border: 3px solid var(--primary-color); color: var(--text-color); font-weight: 800; font-size: 1.3rem;
+            min-width: 120px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .icon-svg {
+            width: 24px; height: 24px; stroke: var(--text-color);
+            stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none;
+        }
+        #board-wrapper {
+            display: flex; justify-content: center; align-items: center;
+            padding: 12px; background: white; border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(255, 171, 145, 0.25);
+            border: 5px solid var(--board-bg); margin-top: 0; transform-origin: center center;
+        }
+        #pg-board {
+            display: grid; position: relative; background-color: var(--board-bg); user-select: none; touch-action: none;
+        }
+        .pg-cell {
+            width: var(--cell-size); height: var(--cell-size);
+            display: flex; align-items: center; justify-content: center; position: relative; cursor: inherit; 
+        }
+        .pg-fruit {
+            font-size: 28px; opacity: 0.6; transition: transform 0.2s;
+            display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;
+        }
+        .pg-num {
+            position: absolute; z-index: 2; font-size: 22px; font-weight: 900; color: var(--text-color);
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff; pointer-events: none;
+        }
+        #pg-selection {
+            position: absolute; background-color: rgba(255, 112, 67, 0.25);
+            border: 3px solid var(--accent-color); border-radius: 8px;
+            display: none; pointer-events: none; z-index: 10;
+            box-sizing: border-box; box-shadow: 0 0 10px rgba(255, 87, 34, 0.4);
+        }
+        .pg-cell.fading .pg-fruit { transform: scale(0); opacity: 0; transition: all 0.3s ease-in; }
+        .pg-cell.fading .pg-num { opacity: 0; transition: opacity 0.2s; }
+        .pg-cell.empty { pointer-events: auto; }
+        .pg-cell.empty .pg-fruit, .pg-cell.empty .pg-num { display: none; }
+        .particle {
+            position: absolute; pointer-events: none; font-size: 20px; z-index: 20;
+            animation: particleAnim 0.6s ease-out forwards;
+        }
+        @keyframes particleAnim {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0.5); opacity: 0; }
+        }
+        #result-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center; z-index: 300; opacity: 0; transition: opacity 0.3s ease;
+        }
+        #result-modal.show { opacity: 1; }
+        .modal-content {
+            background: #fff; padding: 30px; border-radius: 30px; text-align: center; position: relative;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2); transform: scale(0.8);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; flex-direction: column; align-items: center;
+            max-height: 90vh; overflow-y: auto; width: 90%; max-width: 350px;
+        }
+        #result-modal.show .modal-content { transform: scale(1); }
+        #score-card {
+            width: 100%; padding: 20px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border: 4px solid #ffb74d; border-radius: 20px; margin-bottom: 15px;
+            display: flex; flex-direction: column; align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05); font-family: 'Jua', sans-serif; color: var(--text-color);
+        }
+        .card-title { font-size: 1.3rem; margin-bottom: 10px; color: var(--accent-color); }
+        .card-score-box { font-size: 3rem; font-weight: 900; color: var(--text-color); margin: 5px 0; text-shadow: 2px 2px 0 #fff; }
+        .card-combo { font-size: 1rem; color: #795548; margin-bottom: 5px; }
+        #ranking-submit-area {
+            width: 100%; background: #f5f5f5; padding: 15px; border-radius: 15px; margin-bottom: 15px;
+            display: flex; gap: 10px; justify-content: center;
+        }
+        #player-name {
+            width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 10px;
+            font-family: 'Jua', sans-serif; font-size: 1rem; outline: none; text-align: center;
+        }
+        #player-name:focus { border-color: var(--accent-color); }
+        #btn-submit-score {
+            white-space: nowrap; padding: 10px 15px; border: none; border-radius: 10px;
+            background: var(--accent-color); color: white; font-family: 'Jua', sans-serif; cursor: pointer;
+        }
+        #btn-submit-score:disabled { background: #ccc; cursor: not-allowed; }
+        #leaderboard-area { width: 100%; text-align: left; margin-bottom: 20px; font-family: 'Jua', sans-serif; }
+        #leaderboard-area h3 { margin: 0 0 10px 0; color: var(--text-color); text-align: center; font-size: 1.2rem; }
+        #leaderboard-list {
+            list-style: none; padding: 0; margin: 0; background: #fff9c4; border-radius: 15px; overflow: hidden;
+            border: 2px solid #fff59d;
+        }
+        #leaderboard-list li {
+            padding: 10px 15px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #fff59d; color: var(--text-color); font-size: 1.1rem;
+        }
+        #leaderboard-list li:last-child { border-bottom: none; }
+        .rank-medal { font-size: 1.3rem; margin-right: 5px; }
+        .modal-btns { display: flex; gap: 10px; width: 100%; justify-content: center; }
+        .modal-btn {
+            padding: 12px 20px; border: none; border-radius: 50px;
+            font-family: 'Jua', sans-serif; font-size: 1rem; cursor: pointer;
+            transition: transform 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; flex: 1;
+        }
+        .btn-restart { background: var(--accent-color); color: white; box-shadow: 0 4px 10px rgba(255, 112, 67, 0.3); }
+        .btn-share { background: #81c784; color: white; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3); }
+        .modal-btn:hover { transform: scale(1.05); }
+        @media (max-width: 768px) {
+            :root { --cell-size: 36px; }
+            .start-title { font-size: 2.2rem; }
+            .header-info { margin-bottom: 15px; }
+            #pg-reset-btn { margin-top: 15px !important; }
+        }
+    </style>
+</head>
+<body>
+    <div id="main-container">
+        <div id="start-screen">
+            <div class="start-title">🍑 복숭아 게임 🍑 </div>
+            <div class="start-desc">드래그해서 합이 10이 되면 팡!</div>
+            <button class="btn-custom" id="start-btn">GAME START</button>
+        </div>
+        <div id="game-screen">
+            <div id="combo-area"><div id="combo-text">COMBO!</div></div>
+            <div class="header-info">
+                <div class="info-box">
+                    <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2 2"></path><path d="M10 2h4"></path><path d="M12 2v3"></path></svg>
+                    <span id="pg-timer">120</span>
+                </div>
+                <div class="info-box">
+                    <svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 8h16l-2 11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L4 8z"></path><path d="M8 8c0-3 1.5-5 4-5s4 2 4 5"></path></svg>
+                    <span id="pg-score">0</span>
+                </div>
+            </div>
+            <div id="board-wrapper">
+                <div id="pg-board">
+                    <div id="pg-selection"></div>
+                </div>
+            </div>
+            <button class="btn-custom" id="pg-reset-btn" style="margin-top:30px; font-size: 1rem; padding: 10px 30px; background:#bdbdbd;">처음으로</button>
+        </div>
+    </div>
+    <div id="result-modal">
+        <div class="modal-content">
+            <div id="score-card">
+                <div class="card-title">🍑 오늘의 수확 🍑</div>
+                <div class="card-score-box" id="card-final-score">0</div>
+                <div class="card-combo">MAX COMBO: <span id="card-max-combo">0</span></div>
+            </div>
+            <div id="ranking-submit-area">
+                <input type="text" id="player-name" placeholder="닉네임 (최대 5자)" maxlength="5">
+                <button id="btn-submit-score">등록</button>
+            </div>
+            <div id="leaderboard-area">
+                <h3>🏆 TOP 5 명예의 전당 🏆</h3>
+                <ul id="leaderboard-list">
+                    <li>데이터를 불러오는 중...</li>
+                </ul>
+            </div>
+            <div class="modal-btns">
+                <button class="modal-btn btn-share" id="btn-share-img">📸 복사</button>
+                <button class="modal-btn btn-restart" id="btn-restart-modal">🔄 다시하기</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmAIiEVG-Xq1zVYy8VIaijOYSBRObpvF4",
+            authDomain: "peach-game.firebaseapp.com",
+            projectId: "peach-game",
+            storageBucket: "peach-game.firebasestorage.app",
+            messagingSenderId: "1002453317658",
+            appId: "1:1002453317658:web:a62ae59f9da04a2c2cb9a3",
+            measurementId: "G-TV7TSFL36E"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const CONFIG = { rows: 10, cols: 17, target: 10, time: 120, emoji: '🍑' };
+        const STATE = { 
+            grid: [], score: 0, time: CONFIG.time, 
+            timerInterval: null, isDrag: false, startPos: null,
+            combo: 0, maxCombo: 0, lastMatchTime: 0, comboTimer: null, scoreSubmitted: false
+        };
+
+        const els = {
+            startScreen: document.getElementById('start-screen'),
+            gameScreen: document.getElementById('game-screen'),
+            boardWrapper: document.getElementById('board-wrapper'),
+            board: document.getElementById('pg-board'),
+            selBox: document.getElementById('pg-selection'),
+            score: document.getElementById('pg-score'),
+            timer: document.getElementById('pg-timer'),
+            comboText: document.getElementById('combo-text'),
+            startBtn: document.getElementById('start-btn'),
+            resetBtn: document.getElementById('pg-reset-btn'),
+            modal: document.getElementById('result-modal'),
+            cardScore: document.getElementById('card-final-score'),
+            cardCombo: document.getElementById('card-max-combo'),
+            shareBtn: document.getElementById('btn-share-img'),
+            restartModalBtn: document.getElementById('btn-restart-modal'),
+            submitArea: document.getElementById('ranking-submit-area'),
+            playerNameInput: document.getElementById('player-name'),
+            submitScoreBtn: document.getElementById('btn-submit-score'),
+            leaderboardList: document.getElementById('leaderboard-list')
+        };
+
+        window.addEventListener('resize', fitBoardToScreen);
+        els.startBtn.addEventListener('click', startGame);
+        els.resetBtn.addEventListener('click', resetGame);
+        els.restartModalBtn.addEventListener('click', () => { closeModal(); startGame(); });
+
+        els.shareBtn.addEventListener('click', async () => {
+            const cardEl = document.getElementById('score-card');
+            try {
+                const canvas = await html2canvas(cardEl, { scale: 2, backgroundColor: null });
+                canvas.toBlob(async (blob) => {
+                    try {
+                        const item = new ClipboardItem({ 'image/png': blob });
+                        await navigator.clipboard.write([item]);
+                        alert('이미지가 클립보드에 복사되었어요! \n원하는 곳에 붙여넣기(Ctrl+V) 하세요. 🍑');
+                    } catch (err) {
+                        const link = document.createElement('a');
+                        link.download = 'peach-score.png';
+                        link.href = canvas.toDataURL();
+                        link.click();
+                        alert('이미지로 저장되었습니다! 📸');
+                    }
+                });
+            } catch (e) {
+                alert('이미지 생성에 실패했어요 😢');
+            }
+        });
+
+        els.submitScoreBtn.addEventListener('click', async () => {
+            const name = els.playerNameInput.value.trim();
+            if(!name) { alert("닉네임을 입력해주세요!"); return; }
+            if(STATE.scoreSubmitted) { alert("이미 점수를 등록했습니다!"); return; }
+
+            els.submitScoreBtn.innerText = "등록중...";
+            els.submitScoreBtn.disabled = true;
+
+            try {
+                await addDoc(collection(db, "rankings"), {
+                    name: name,
+                    score: STATE.score,
+                    timestamp: serverTimestamp()
+                });
+                STATE.scoreSubmitted = true;
+                els.submitArea.style.display = 'none';
+                loadLeaderboard();
+            } catch (e) {
+                alert("점수 등록에 실패했습니다.");
+                els.submitScoreBtn.innerText = "등록";
+                els.submitScoreBtn.disabled = false;
+            }
+        });
+
+        async function loadLeaderboard() {
+            els.leaderboardList.innerHTML = '<li>데이터를 불러오는 중...</li>';
+            try {
+                const q = query(collection(db, "rankings"), orderBy("score", "desc"), limit(5));
+                const querySnapshot = await getDocs(q);
+                
+                els.leaderboardList.innerHTML = '';
+                let rank = 1;
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    let medal = `${rank}위`;
+                    if(rank === 1) medal = '🥇';
+                    if(rank === 2) medal = '🥈';
+                    if(rank === 3) medal = '🥉';
+
+                    els.leaderboardList.innerHTML += `
+                        <li>
+                            <span><span class="rank-medal">${medal}</span> ${data.name}</span>
+                            <strong>${data.score}점</strong>
+                        </li>
+                    `;
+                    rank++;
+                });
+
+                if(querySnapshot.empty) {
+                    els.leaderboardList.innerHTML = '<li style="justify-content:center;">아직 등록된 점수가 없어요! 첫 랭커가 되어보세요.</li>';
+                }
+            } catch (e) {
+                els.leaderboardList.innerHTML = '<li style="justify-content:center;">랭킹을 불러오지 못했습니다.</li>';
+            }
+        }
+
+        function startGame() {
+            els.startScreen.style.display = 'none';
+            els.gameScreen.style.display = 'flex';
+            
+            const isMobile = window.innerWidth <= 768;
+            CONFIG.rows = isMobile ? 17 : 10;
+            CONFIG.cols = isMobile ? 10 : 17;
+
+            STATE.score = 0; STATE.time = CONFIG.time; 
+            STATE.combo = 0; STATE.maxCombo = 0;
+            STATE.scoreSubmitted = false;
+            
+            updateUI();
+            createBoard(); 
+            fitBoardToScreen();
+            
+            clearInterval(STATE.timerInterval);
+            STATE.timerInterval = setInterval(() => {
+                STATE.time--;
+                updateUI();
+                if(STATE.time <= 0) endGame();
+            }, 1000);
+        }
+
+        function resetGame() {
+            clearInterval(STATE.timerInterval);
+            closeModal();
+            els.gameScreen.style.display = 'none';
+            els.startScreen.style.display = 'flex';
+        }
+
+        function endGame() {
+            clearInterval(STATE.timerInterval);
+            showModal();
+        }
+
+        function showModal() {
+            els.cardScore.innerText = STATE.score;
+            els.cardCombo.innerText = STATE.maxCombo;
+            
+            els.playerNameInput.value = '';
+            els.submitScoreBtn.innerText = "등록";
+            els.submitScoreBtn.disabled = false;
+            els.submitArea.style.display = 'flex';
+            
+            loadLeaderboard();
+
+            els.modal.style.display = 'flex';
+            setTimeout(() => els.modal.classList.add('show'), 10);
+        }
+
+        function closeModal() {
+            els.modal.classList.remove('show');
+            setTimeout(() => els.modal.style.display = 'none', 300);
+        }
+
+        function createBoard() {
+            STATE.grid = [];
+            els.board.innerHTML = '';
+            els.board.appendChild(els.selBox);
+
+            els.board.style.gridTemplateColumns = `repeat(${CONFIG.cols}, var(--cell-size))`;
+            els.board.style.gridTemplateRows = `repeat(${CONFIG.rows}, var(--cell-size))`;
+
+            for(let r=0; r<CONFIG.rows; r++){
+                let row = [];
+                for(let c=0; c<CONFIG.cols; c++){
+                    const num = Math.floor(Math.random() * 9) + 1;
+                    const cell = document.createElement('div');
+                    cell.className = 'pg-cell';
+                    cell.dataset.r = r; cell.dataset.c = c;
+                    
+                    const fruit = document.createElement('div');
+                    fruit.className = 'pg-fruit';
+                    fruit.innerText = CONFIG.emoji;
+                    
+                    const number = document.createElement('div');
+                    number.className = 'pg-num';
+                    number.innerText = num;
+
+                    cell.append(fruit, number);
+                    els.board.appendChild(cell);
+                    row.push({el: cell, val: num, active: true});
+                }
+                STATE.grid.push(row);
+            }
+        }
+
+        function updateUI() {
+            els.score.innerText = STATE.score;
+            els.timer.innerText = STATE.time;
+        }
+
+        function fitBoardToScreen() {
+            const isMobile = window.innerWidth <= 768;
+            const maxWidth = window.innerWidth * 0.95; 
+            const maxHeight = isMobile ? window.innerHeight * 0.70 : window.innerHeight * 0.65;
+            
+            const cellSize = isMobile ? 36 : 42; 
+            const boardWidth = CONFIG.cols * cellSize; 
+            const boardHeight = CONFIG.rows * cellSize; 
+            
+            let scaleW = maxWidth / boardWidth;
+            let scaleH = maxHeight / boardHeight;
+            let scale = Math.min(scaleW, scaleH);
+            
+            els.boardWrapper.style.transform = `scale(${Math.min(Math.max(scale, 0.4), 1.0)})`; 
+        }
+
+        const getEventPos = (e) => {
+            if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            if (e.changedTouches && e.changedTouches.length > 0) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+            return { x: e.clientX, y: e.clientY };
+        };
+
+        const startDrag = (e) => {
+            if (e.touches && e.touches.length > 1) return;
+            const targetEl = e.target.closest('.pg-cell');
+            if(!targetEl) return;
+            if (e.cancelable) e.preventDefault();
+
+            STATE.isDrag = true;
+            STATE.startPos = { r: parseInt(targetEl.dataset.r), c: parseInt(targetEl.dataset.c) };
+            updateSelection(getEventPos(e));
+        };
+
+        const moveDrag = (e) => {
+            if(!STATE.isDrag) return;
+            if (e.cancelable) e.preventDefault(); 
+            updateSelection(getEventPos(e));
+        };
+
+        const endDrag = (e) => {
+            if(STATE.isDrag) {
+                STATE.isDrag = false;
+                els.selBox.style.display = 'none';
+                checkSum();
+            }
+        };
+
+        els.board.addEventListener('mousedown', startDrag);
+        window.addEventListener('mousemove', moveDrag, { passive: false });
+        window.addEventListener('mouseup', endDrag);
+
+        els.board.addEventListener('touchstart', startDrag, { passive: false });
+        window.addEventListener('touchmove', moveDrag, { passive: false });
+        window.addEventListener('touchend', endDrag);
+        window.addEventListener('touchcancel', endDrag);
+
+        function updateSelection(pos) {
+            const targetEl = document.elementFromPoint(pos.x, pos.y);
+            const cell = targetEl ? targetEl.closest('.pg-cell') : null;
+
+            if(!cell || !els.board.contains(cell)) return;
+
+            const endR = parseInt(cell.dataset.r), endC = parseInt(cell.dataset.c);
+            const minR = Math.min(STATE.startPos.r, endR), maxR = Math.max(STATE.startPos.r, endR);
+            const minC = Math.min(STATE.startPos.c, endC), maxC = Math.max(STATE.startPos.c, endC);
+
+            const cellElStart = STATE.grid[minR][minC].el;
+            const cellElEnd = STATE.grid[maxR][maxC].el;
+
+            const sLeft = cellElStart.offsetLeft;
+            const sTop = cellElStart.offsetTop;
+            const eRight = cellElEnd.offsetLeft + cellElEnd.offsetWidth;
+            const eBottom = cellElEnd.offsetTop + cellElEnd.offsetHeight;
+
+            els.selBox.style.left = `${sLeft}px`;
+            els.selBox.style.top = `${sTop}px`;
+            els.selBox.style.width = `${eRight - sLeft}px`;
+            els.selBox.style.height = `${eBottom - sTop}px`;
+            els.selBox.style.display = 'block';
+            els.selBox.dataset.area = JSON.stringify({minR, maxR, minC, maxC});
+        }
+
+        function checkSum() {
+            if(!els.selBox.dataset.area) return;
+            const {minR, maxR, minC, maxC} = JSON.parse(els.selBox.dataset.area);
+            
+            let sum = 0, selected = [];
+            for(let r=minR; r<=maxR; r++) {
+                for(let c=minC; c<=maxC; c++) {
+                    if(STATE.grid[r][c].active) {
+                        sum += STATE.grid[r][c].val;
+                        selected.push(STATE.grid[r][c]);
+                    }
+                }
+            }
+
+            if(sum === CONFIG.target && selected.length > 0) {
+                processSuccess(selected);
+            }
+            els.selBox.dataset.area = '';
+        }
+
+        function processSuccess(selected) {
+            STATE.score += selected.length;
+
+            const now = Date.now();
+            if (now - STATE.lastMatchTime < 3000) {
+                STATE.combo++;
+            } else {
+                STATE.combo = 1; 
+            }
+            STATE.lastMatchTime = now;
+            if(STATE.combo > STATE.maxCombo) STATE.maxCombo = STATE.combo;
+
+            if(STATE.combo > 1) {
+                let bonusMsg = "";
+                if (STATE.combo % 5 === 0) {
+                    STATE.score += 1;
+                    bonusMsg = " (+1 BONUS)";
+                }
+                showComboEffect(STATE.combo, bonusMsg);
+            }
+
+            updateUI();
+
+            selected.forEach(d => {
+                d.active = false;
+                d.el.classList.add('fading');
+                createBurst(d.el);
+                setTimeout(() => {
+                    d.el.className = 'pg-cell empty';
+                }, 300);
+            });
+        }
+
+        function showComboEffect(count, extraText) {
+            els.comboText.innerText = `${count} COMBO!${extraText}`;
+            els.comboText.style.opacity = '1';
+            els.comboText.classList.remove('combo-pop');
+            void els.comboText.offsetWidth; 
+            els.comboText.classList.add('combo-pop');
+            
+            clearTimeout(STATE.comboTimer);
+            STATE.comboTimer = setTimeout(() => {
+                els.comboText.style.opacity = '0';
+            }, 1500);
+        }
+
+        function createBurst(cellEl) {
+            const centerX = cellEl.offsetLeft + cellEl.offsetWidth / 2;
+            const centerY = cellEl.offsetTop + cellEl.offsetHeight / 2;
+
+            for (let i = 0; i < 6; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.innerText = CONFIG.emoji;
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 40 + Math.random() * 40;
+                p.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
+                p.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
+                p.style.left = `${centerX}px`;
+                p.style.top = `${centerY}px`;
+                els.board.appendChild(p);
+                setTimeout(() => p.remove(), 600);
+            }
+        }
+    </script>
+</body>
+</html>
