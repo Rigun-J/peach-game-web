@@ -15,18 +15,18 @@
             --text-color: #5d4037; 
             --cell-size: 42px;
         }
-        * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; user-select: none; }
+        * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
         body {
             margin: 0; background-color: var(--bg-color);
             display: flex; justify-content: center; align-items: flex-start;
             min-height: 100dvh; font-family: 'Nunito', 'Jua', sans-serif;
-            overflow-x: hidden; overflow-y: auto; overscroll-behavior: none;
+            overflow-x: hidden; overflow-y: auto; overscroll-behavior: none; -webkit-overflow-scrolling: auto;
             cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'><defs><filter id='shadow'><feDropShadow dx='1' dy='1' stdDeviation='1' flood-color='rgba(0,0,0,0.3)'/></filter></defs><g filter='url(%23shadow)'><g transform='scale(0.8)'><path d='M2,2 L2,24 L7.5,19 L12,28 L15,26 L10.5,17 L17,17 Z' fill='white' stroke='%235D4037' stroke-width='1.0' stroke-linejoin='round' stroke-linecap='round'/></g><g transform='translate(8, 18) scale(0.8)'><path d='M10,16 Q20,2 30,16' fill='none' stroke='%238D6E63' stroke-width='3' stroke-linecap='round'/><path d='M6,16 L34,16 L31,32 Q20,36 9,32 Z' fill='%23FFCC80' stroke='white' stroke-width='2'/><path d='M6,16 L34,16 L31,32 Q20,36 9,32 Z' fill='%23FFCC80' stroke='%23EF6C00' stroke-width='1.5'/><path d='M6,16 L34,16' stroke='%23EF6C00' stroke-width='1.5'/></g></g></svg>") 0 0, auto;
         }
         #main-container {
             position: relative; width: 100%; max-width: 800px; min-height: 100dvh;
             display: flex; flex-direction: column; align-items: center; justify-content: flex-start; 
-            padding: 20px 10px;
+            padding: 20px 10px; -webkit-text-size-adjust: none;
         }
         #start-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -77,7 +77,7 @@
             border: 5px solid var(--board-bg); margin: auto 0; flex-shrink: 0;
         }
         #pg-board {
-            display: grid; position: relative; background-color: var(--board-bg); user-select: none; touch-action: none;
+            display: grid; position: relative; background-color: var(--board-bg); user-select: none; touch-action: none; -webkit-user-drag: none;
         }
         .pg-cell {
             width: var(--cell-size); height: var(--cell-size);
@@ -89,8 +89,8 @@
         }
         .pg-num {
             position: absolute; z-index: 2; font-size: calc(var(--cell-size) * 0.55); font-weight: 900; color: var(--text-color);
-            top: 50%; left: 50%; transform: translate(-50%, -50%);
-            text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff; pointer-events: none;
+            top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none;
+            -webkit-text-stroke: 1.8px #fff; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; text-shadow: none;
         }
         #pg-selection {
             position: absolute; background-color: rgba(255, 112, 67, 0.25);
@@ -277,6 +277,10 @@
         els.resetBtn.addEventListener('click', resetGame);
         els.restartModalBtn.addEventListener('click', () => { closeModal(); startGame(); });
 
+        document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+        document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+        document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+
         els.shareBtn.addEventListener('click', async () => {
             const cardEl = document.getElementById('score-card');
             try {
@@ -452,15 +456,15 @@
             const isMobile = window.innerWidth <= 768;
             const maxWidth = window.innerWidth * 0.95; 
             
-            const availableHeight = window.innerHeight - 220; 
+            const availableHeight = window.innerHeight - (isMobile ? 180 : 220); 
             
             const maxCellW = maxWidth / CONFIG.cols;
             const maxCellH = availableHeight / CONFIG.rows;
             
             let finalCellSize = Math.min(maxCellW, maxCellH);
             
-            if (finalCellSize > 50) finalCellSize = 50;
-            if (finalCellSize < 25) finalCellSize = 25; 
+            if (finalCellSize > (isMobile ? 42 : 50)) finalCellSize = (isMobile ? 42 : 50);
+            if (finalCellSize < 22) finalCellSize = 22; 
             
             document.documentElement.style.setProperty('--cell-size', `${finalCellSize}px`);
         }
@@ -475,7 +479,7 @@
             if (e.touches && e.touches.length > 1) return;
             const targetEl = e.target.closest('.pg-cell');
             if(!targetEl) return;
-            if (e.cancelable) e.preventDefault();
+            if (e.cancelable && e.type === 'touchstart') e.preventDefault();
 
             STATE.isDrag = true;
             STATE.startPos = { r: parseInt(targetEl.dataset.r), c: parseInt(targetEl.dataset.c) };
@@ -484,7 +488,7 @@
 
         const moveDrag = (e) => {
             if(!STATE.isDrag) return;
-            if (e.cancelable) e.preventDefault(); 
+            if (e.cancelable && e.type === 'touchmove') e.preventDefault(); 
             updateSelection(getEventPos(e));
         };
 
