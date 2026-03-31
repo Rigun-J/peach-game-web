@@ -226,7 +226,7 @@
                 </ul>
             </div>
             <div class="modal-btns">
-                <button class="modal-btn btn-share" id="btn-share-img">📸 복사</button>
+                <button class="modal-btn btn-share" id="btn-share-img">📸 이미지 복사</button>
                 <button class="modal-btn btn-restart" id="btn-restart-modal">🔄 다시하기</button>
             </div>
         </div>
@@ -278,6 +278,11 @@
             leaderboardList: document.getElementById('leaderboard-list')
         };
 
+        const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobileDevice) {
+            els.shareBtn.innerText = "📸 이미지 저장";
+        }
+
         window.addEventListener('resize', fitBoardToScreen);
         els.startBtn.addEventListener('click', startGame);
         els.resetBtn.addEventListener('click', resetGame);
@@ -304,19 +309,27 @@
             const cardEl = document.getElementById('score-card');
             try {
                 const canvas = await html2canvas(cardEl, { scale: 2, backgroundColor: null });
-                canvas.toBlob(async (blob) => {
-                    try {
-                        const item = new ClipboardItem({ 'image/png': blob });
-                        await navigator.clipboard.write([item]);
-                        alert('이미지가 클립보드에 복사되었어요! \n원하는 곳에 붙여넣기(Ctrl+V) 하세요. 🍑');
-                    } catch (err) {
-                        const link = document.createElement('a');
-                        link.download = 'peach-score.png';
-                        link.href = canvas.toDataURL();
-                        link.click();
-                        alert('이미지로 저장되었습니다! 📸');
-                    }
-                });
+                if (isMobileDevice) {
+                    const link = document.createElement('a');
+                    link.download = 'peach-score.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    alert('갤러리/다운로드 폴더에 이미지가 저장되었습니다! 📸');
+                } else {
+                    canvas.toBlob(async (blob) => {
+                        try {
+                            const item = new ClipboardItem({ 'image/png': blob });
+                            await navigator.clipboard.write([item]);
+                            alert('이미지가 클립보드에 복사되었어요! \n원하는 곳에 붙여넣기(Ctrl+V) 하세요. 🍑');
+                        } catch (err) {
+                            const link = document.createElement('a');
+                            link.download = 'peach-score.png';
+                            link.href = canvas.toDataURL('image/png');
+                            link.click();
+                            alert('클립보드 복사를 지원하지 않아 이미지로 저장되었습니다! 📸');
+                        }
+                    });
+                }
             } catch (e) {
                 alert('이미지 생성에 실패했어요 😢');
             }
@@ -382,9 +395,8 @@
             els.startScreen.style.display = 'none';
             els.gameScreen.style.display = 'flex';
             
-            const isMobile = window.innerWidth <= 768;
-            CONFIG.rows = isMobile ? 17 : 10;
-            CONFIG.cols = isMobile ? 10 : 17;
+            CONFIG.rows = isMobileDevice ? 17 : 10;
+            CONFIG.cols = isMobileDevice ? 10 : 17;
 
             STATE.score = 0; STATE.time = CONFIG.time; 
             STATE.combo = 0; STATE.maxCombo = 0;
@@ -472,16 +484,15 @@
         }
 
         function fitBoardToScreen() {
-            const isMobile = window.innerWidth <= 768;
             const maxWidth = window.innerWidth * 0.95; 
-            const availableHeight = window.innerHeight - (isMobile ? 180 : 220); 
+            const availableHeight = window.innerHeight - (isMobileDevice ? 180 : 220); 
             
             const maxCellW = maxWidth / CONFIG.cols;
             const maxCellH = availableHeight / CONFIG.rows;
             
             let finalCellSize = Math.min(maxCellW, maxCellH);
             
-            if (finalCellSize > (isMobile ? 42 : 50)) finalCellSize = (isMobile ? 42 : 50);
+            if (finalCellSize > (isMobileDevice ? 42 : 50)) finalCellSize = (isMobileDevice ? 42 : 50);
             if (finalCellSize < 22) finalCellSize = 22; 
             
             document.documentElement.style.setProperty('--cell-size', `${finalCellSize}px`);
