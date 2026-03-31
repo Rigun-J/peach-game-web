@@ -17,12 +17,11 @@
         }
         * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
         html, body {
-            margin: 0; padding: 0; width: 100%; height: 100%;
+            margin: 0; padding: 0; width: 100vw; height: 100vh;
             background-color: var(--bg-color);
             display: flex; justify-content: center; align-items: flex-start;
             font-family: 'Nunito', 'Jua', sans-serif;
-            overflow: hidden; position: fixed; 
-            overscroll-behavior: none;
+            overflow: hidden; overscroll-behavior: none;
             cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'><defs><filter id='shadow'><feDropShadow dx='1' dy='1' stdDeviation='1' flood-color='rgba(0,0,0,0.3)'/></filter></defs><g filter='url(%23shadow)'><g transform='scale(0.8)'><path d='M2,2 L2,24 L7.5,19 L12,28 L15,26 L10.5,17 L17,17 Z' fill='white' stroke='%235D4037' stroke-width='1.0' stroke-linejoin='round' stroke-linecap='round'/></g><g transform='translate(8, 18) scale(0.8)'><path d='M10,16 Q20,2 30,16' fill='none' stroke='%238D6E63' stroke-width='3' stroke-linecap='round'/><path d='M6,16 L34,16 L31,32 Q20,36 9,32 Z' fill='%23FFCC80' stroke='white' stroke-width='2'/><path d='M6,16 L34,16 L31,32 Q20,36 9,32 Z' fill='%23FFCC80' stroke='%23EF6C00' stroke-width='1.5'/><path d='M6,16 L34,16' stroke='%23EF6C00' stroke-width='1.5'/></g></g></svg>") 0 0, auto;
         }
         #main-container {
@@ -116,32 +115,33 @@
             100% { transform: translate(var(--tx), var(--ty)) scale(0.5); opacity: 0; }
         }
         #result-modal {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px);
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px);
             display: none; justify-content: center; align-items: center; z-index: 300; opacity: 0; transition: opacity 0.3s ease;
         }
         #result-modal.show { opacity: 1; }
         .modal-content {
-            background: #fff; padding: 30px; border-radius: 30px; text-align: center; position: relative;
+            background: #fff; padding: 25px 20px; border-radius: 30px; text-align: center; position: relative;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2); transform: scale(0.8);
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex; flex-direction: column; align-items: center;
-            max-height: 90%; overflow-y: auto; width: 90%; max-width: 350px;
-            pointer-events: auto; touch-action: pan-y;
+            max-height: 85vh; overflow-y: auto; width: 90%; max-width: 350px;
+            pointer-events: auto; touch-action: pan-y; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
         }
         #result-modal.show .modal-content { transform: scale(1); }
         #score-card {
-            width: 100%; padding: 20px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            width: 100%; padding: 25px 20px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
             border: 4px solid #ffb74d; border-radius: 20px; margin-bottom: 15px;
-            display: flex; flex-direction: column; align-items: center;
+            display: flex; flex-direction: column; align-items: center; position: relative;
             box-shadow: 0 5px 15px rgba(0,0,0,0.05); font-family: 'Jua', sans-serif; color: var(--text-color);
         }
-        .card-title { font-size: 1.3rem; margin-bottom: 10px; color: var(--accent-color); }
-        .card-score-box { font-size: 3rem; font-weight: 900; color: var(--text-color); margin: 5px 0; text-shadow: 2px 2px 0 #fff; }
-        .card-combo { font-size: 1rem; color: #795548; margin-bottom: 5px; }
+        .card-title { font-size: 1.4rem; margin-bottom: 15px; color: var(--accent-color); }
+        .card-percent { font-size: 1.1rem; color: rgba(121, 85, 72, 0.6); font-weight: bold; margin-bottom: -5px; z-index: 1; }
+        .card-score-box { font-size: 4rem; font-weight: 900; color: var(--text-color); margin: 0; text-shadow: 2px 2px 0 #fff; z-index: 2; }
+        .card-combo { font-size: 1.1rem; color: #795548; margin-top: 5px; }
         #ranking-submit-area {
             width: 100%; background: #f5f5f5; padding: 15px; border-radius: 15px; margin-bottom: 15px;
-            display: flex; gap: 10px; justify-content: center;
+            display: flex; gap: 10px; justify-content: center; flex-shrink: 0;
         }
         #player-name {
             width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 10px;
@@ -153,7 +153,7 @@
             background: var(--accent-color); color: white; font-family: 'Jua', sans-serif; cursor: pointer;
         }
         #btn-submit-score:disabled { background: #ccc; cursor: not-allowed; }
-        #leaderboard-area { width: 100%; text-align: left; margin-bottom: 20px; font-family: 'Jua', sans-serif; }
+        #leaderboard-area { width: 100%; text-align: left; margin-bottom: 20px; font-family: 'Jua', sans-serif; flex-shrink: 0; }
         #leaderboard-area h3 { margin: 0 0 10px 0; color: var(--text-color); text-align: center; font-size: 1.2rem; }
         #leaderboard-list {
             list-style: none; padding: 0; margin: 0; background: #fff9c4; border-radius: 15px; overflow: hidden;
@@ -165,7 +165,7 @@
         }
         #leaderboard-list li:last-child { border-bottom: none; }
         .rank-medal { font-size: 1.3rem; margin-right: 5px; }
-        .modal-btns { display: flex; gap: 10px; width: 100%; justify-content: center; }
+        .modal-btns { display: flex; gap: 10px; width: 100%; justify-content: center; flex-shrink: 0; padding-bottom: 10px; }
         .modal-btn {
             padding: 12px 20px; border: none; border-radius: 50px;
             font-family: 'Jua', sans-serif; font-size: 1rem; cursor: pointer;
@@ -212,6 +212,7 @@
         <div class="modal-content">
             <div id="score-card">
                 <div class="card-title">🍑 오늘의 수확 🍑</div>
+                <div class="card-percent" id="card-percent">상위 --%</div>
                 <div class="card-score-box" id="card-final-score">0</div>
                 <div class="card-combo">MAX COMBO: <span id="card-max-combo">0</span></div>
             </div>
@@ -226,7 +227,7 @@
                 </ul>
             </div>
             <div class="modal-btns">
-                <button class="modal-btn btn-share" id="btn-share-img">📸 이미지 복사</button>
+                <button class="modal-btn btn-share" id="btn-share-img">📸 복사</button>
                 <button class="modal-btn btn-restart" id="btn-restart-modal">🔄 다시하기</button>
             </div>
         </div>
@@ -234,7 +235,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, where, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCmAIiEVG-Xq1zVYy8VIaijOYSBRObpvF4",
@@ -270,6 +271,7 @@
             modal: document.getElementById('result-modal'),
             cardScore: document.getElementById('card-final-score'),
             cardCombo: document.getElementById('card-max-combo'),
+            cardPercent: document.getElementById('card-percent'),
             shareBtn: document.getElementById('btn-share-img'),
             restartModalBtn: document.getElementById('btn-restart-modal'),
             submitArea: document.getElementById('ranking-submit-area'),
@@ -359,6 +361,30 @@
             }
         });
 
+        async function updatePercentile() {
+            els.cardPercent.innerText = "계산 중...";
+            try {
+                const rankQuery = query(collection(db, "rankings"), where("score", ">", STATE.score));
+                const rankSnapshot = await getCountFromServer(rankQuery);
+                const expectedRank = rankSnapshot.data().count + 1;
+
+                const totalQuery = collection(db, "rankings");
+                const totalSnapshot = await getCountFromServer(totalQuery);
+                const total = totalSnapshot.data().count;
+
+                const adjustedTotal = total === 0 ? 1 : total + 1;
+                let percent = Math.ceil((expectedRank / adjustedTotal) * 100);
+
+                if (expectedRank <= 10) {
+                    els.cardPercent.innerText = `상위 ${expectedRank}위`;
+                } else {
+                    els.cardPercent.innerText = `상위 ${percent}%`;
+                }
+            } catch (e) {
+                els.cardPercent.innerText = "상위 --%";
+            }
+        }
+
         async function loadLeaderboard() {
             els.leaderboardList.innerHTML = '<li>데이터를 불러오는 중...</li>';
             try {
@@ -429,12 +455,12 @@
         function showModal() {
             els.cardScore.innerText = STATE.score;
             els.cardCombo.innerText = STATE.maxCombo;
-            
             els.playerNameInput.value = '';
             els.submitScoreBtn.innerText = "등록";
             els.submitScoreBtn.disabled = false;
             els.submitArea.style.display = 'flex';
             
+            updatePercentile();
             loadLeaderboard();
 
             els.modal.style.display = 'flex';
@@ -485,7 +511,7 @@
 
         function fitBoardToScreen() {
             const maxWidth = window.innerWidth * 0.95; 
-            const availableHeight = window.innerHeight - (isMobileDevice ? 180 : 220); 
+            const availableHeight = window.innerHeight - (isMobileDevice ? 180 : 280); 
             
             const maxCellW = maxWidth / CONFIG.cols;
             const maxCellH = availableHeight / CONFIG.rows;
